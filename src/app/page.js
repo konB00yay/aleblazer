@@ -1,23 +1,72 @@
-"use client"
+"use client";
 
+import { useState } from "react";
 import { AleForm } from "@/components/aleForm";
-import dynamic from 'next/dynamic'
+import dynamic from "next/dynamic";
+import { Oswald } from "next/font/google";
 
-export default function Home() {
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: "700",
+});
 
-  const Map = dynamic(() => import('@/components/map'), { 
+const Map = dynamic(() => import("@/components/map"), {
   ssr: false,
-  loading: () => <p>Loading map...</p>
-})
+  loading: () => <p>Loading map...</p>,
+});
+
+export default function Page() {
+  const [crawl, setCrawl] = useState(null);
+  const [warning, setWarning] = useState(null);
+  const [selectedCity, setSelectedCity] = useState(null);
+
+  function handleCrawlGenerated(breweries, warningMsg, city) {
+    setCrawl(breweries);
+    setWarning(warningMsg);
+    setSelectedCity(city);
+  }
 
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <AleForm />
-        <Map center={[40.7128, -74.0060]} zoom={12} />
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-      </footer>
+    <div className="container mx-auto p-6">
+      <h1 className={`${oswald.className} text-5xl w-fit mx-auto`}>Aleblazer</h1>
+      <h2 className="w-fit mx-auto">Craft Your Brewery Crawl</h2>
+      <div className="gap-6 w-1/2 mx-auto">
+        <div>
+          <AleForm onCrawlGenerated={handleCrawlGenerated} />
+        </div>
+
+        <div>
+          {crawl && (
+            <>
+              {warning && (
+                <div className="mb-4 p-4 bg-yellow-50 text-yellow-800 rounded">
+                  {warning}
+                </div>
+              )}
+
+              <h2 className="text-xl font-bold mb-4">Your Brewery Crawl</h2>
+              <div className="space-y-2 mb-4">
+                {crawl.map((brewery, index) => (
+                  <div key={brewery.id} className="p-3 border rounded">
+                    <div className="font-semibold">
+                      {index + 1}. {brewery.name}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {brewery.street}, {brewery.city}
+                    </div>
+                    {brewery.distanceFromPrevious && (
+                      <div className="text-sm text-blue-600">
+                        {brewery.distanceFromPrevious} miles from previous stop
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <Map breweries={crawl} />
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
